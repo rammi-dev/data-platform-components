@@ -1,0 +1,52 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your MinIO deployment is ready with the following configuration:
+
+==============================================================================
+MinIO Standalone Installation
+==============================================================================
+
+1. MinIO has been deployed in standalone mode
+
+2. Pre-configured Resources:
+   - Bucket: minio-temporary
+   - User: default-minio (with full access to minio-temporary bucket)
+   - Policy: minio-temporary-policy
+
+3. Access MinIO API:
+
+   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ .Release.Name }}-minio 9000:9000
+
+   MinIO API endpoint: http://localhost:9000
+
+4. Access MinIO Console (Web UI):
+
+   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ .Release.Name }}-minio-console 9001:9001
+
+   MinIO Console: http://localhost:9001
+
+5. Login Credentials:
+
+   Root User:
+   - Username: {{ .Values.minio.rootUser }}
+   - Password: {{ .Values.minio.rootPassword }}
+
+   Application User:
+   - Username: default-minio
+   - Password: defaultminio123
+
+6. View all MinIO services:
+
+   kubectl get svc --namespace {{ .Release.Namespace }} -l app=minio
+
+==============================================================================
+IMPORTANT NOTES:
+==============================================================================
+
+⚠️  Please change the default passwords in production environments!
+
+📦 The 'minio-temporary' bucket is ready for use
+👤 The 'default-minio' user has full access to the minio-temporary bucket
+🔐 Review and update security policies as needed for your environment
+
+For more information, visit: https://min.io/docs/minio/kubernetes/upstream/

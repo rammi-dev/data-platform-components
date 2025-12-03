@@ -1,0 +1,110 @@
+# Default values for minio-standalone
+
+minio:
+  # Official MinIO configuration
+  
+  # Use Docker Hub images (more reliable than Quay.io)
+  image:
+    repository: minio/minio
+    tag: RELEASE.2025-09-07T16-13-09Z
+    pullPolicy: IfNotPresent
+  
+  # MinIO Client image for provisioning buckets, users, and policies
+  mcImage:
+    repository: minio/mc
+    tag: RELEASE.2024-11-21T17-21-54Z
+    pullPolicy: IfNotPresent
+  
+  # Deployment mode
+  mode: standalone
+  
+  # Number of MinIO instances (for standalone mode, use 1)
+  replicas: 1
+  
+  # Root credentials
+  rootUser: admin
+  rootPassword: adminpassword123
+  
+  # Persistence configuration
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9000
+  
+  # Console service (MinIO UI)
+  consoleService:
+    type: ClusterIP
+    port: 9001
+  
+  # Enable console
+  consoleIngress:
+    enabled: false
+    # ingressClassName: nginx
+    # hosts:
+    #   - minio-console.local
+  
+  # Resource limits (adjust as needed)
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  
+  # Security Context
+  securityContext:
+    enabled: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  
+  # Environment variables for MinIO
+  environment:
+    MINIO_BROWSER: "on"
+  
+  # Buckets to create on startup
+  buckets:
+    - name: minio-temporary
+      policy: none
+      purge: false
+  
+  # Custom policies
+  policies:
+    - name: minio-temporary-policy
+      statements:
+        - effect: Allow
+          resources:
+            - 'arn:aws:s3:::minio-temporary'
+            - 'arn:aws:s3:::minio-temporary/*'
+          actions:
+            - "s3:*"
+  
+  # Users to create (in addition to root)
+  users:
+    - accessKey: default-minio
+      secretKey: defaultminio123
+      policy: minio-temporary-policy
+  
+  # Service Account credentials (linked to the user above)
+  svcaccts: []
+  
+  # Network Policy
+  networkPolicy:
+    enabled: false
+    allowExternal: true
+  
+  # Ingress configuration (disabled by default)
+  ingress:
+    enabled: false
+    # ingressClassName: nginx
+    # hosts:
+    #   - minio.local
+
+# Additional custom configurations can be added here
