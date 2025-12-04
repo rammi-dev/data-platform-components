@@ -47,3 +47,20 @@ Selector labels
 app.kubernetes.io/name: {{ include "minio-standalone.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Create a default fully qualified app name for the MinIO subchart.
+This mimics the logic in the MinIO chart's _helpers.tpl to ensure we generate the correct service names.
+*/}}
+{{- define "minio-subchart.fullname" -}}
+{{- if .Values.minio.fullnameOverride -}}
+{{- .Values.minio.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- $name := default "minio" .Values.minio.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

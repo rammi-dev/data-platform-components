@@ -1,0 +1,95 @@
+# MinIO Values with Vault Integration
+# This file demonstrates how to use helm-secrets with Vault backend
+# to inject MinIO credentials from HashiCorp Vault
+
+# IMPORTANT: This requires the helm-secrets plugin with Vault driver
+# Install: helm plugin install https://github.com/jkroepke/helm-secrets
+
+# Configuration for helm-secrets with Vault backend
+# Set these environment variables before using helm-secrets:
+# export VAULT_ADDR=http://vault-deployment-vault:8200
+# export VAULT_TOKEN=root
+
+minio:
+  # Root credentials from Vault
+  # These will be injected by helm-secrets from Vault path: secret/minio/root
+  rootUser: "{{ .Values.vault.minio.root.username }}"
+  rootPassword: "{{ .Values.vault.minio.root.password }}"
+  
+  # Standard MinIO configuration
+  image:
+    repository: minio/minio
+    tag: RELEASE.2025-09-07T16-13-09Z
+    pullPolicy: IfNotPresent
+  
+  mcImage:
+    repository: minio/mc
+    tag: RELEASE.2024-11-21T17-21-54Z
+    pullPolicy: IfNotPresent
+  
+  mode: standalone
+  replicas: 1
+  
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  
+  service:
+    type: ClusterIP
+    port: 9000
+  
+  consoleService:
+    type: ClusterIP
+    port: 9001
+  
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  
+  securityContext:
+    enabled: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  
+  environment:
+    MINIO_BROWSER: "on"
+  
+  buckets:
+    - name: minio-temporary
+      policy: none
+      purge: false
+  
+  policies:
+    - name: minio-temporary-policy
+      statements:
+        - effect: Allow
+          resources:
+            - 'arn:aws:s3:::minio-temporary'
+            - 'arn:aws:s3:::minio-temporary/*'
+          actions:
+            - "s3:*"
+  
+  # Users with credentials from Vault
+  users:
+    - accessKey: "{{ .Values.vault.minio.users.default_minio.accessKey }}"
+      secretKey: "{{ .Values.vault.minio.users.default_minio.secretKey }}"
+      policy: minio-temporary-policy
+
+# Vault secret references
+# These values will be populated by helm-secrets from Vault
+vault:
+  minio:
+    root:
+      username: ""  # Will be injected from secret/minio/root
+      password: ""  # Will be injected from secret/minio/root
+    users:
+      default_minio:
+        accessKey: ""  # Will be injected from secret/minio/users/default-minio
+        secretKey: ""  # Will be injected from secret/minio/users/default-minio

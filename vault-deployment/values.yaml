@@ -1,0 +1,90 @@
+# Default values for vault-deployment
+
+vault:
+  # HashiCorp Vault configuration
+  
+  global:
+    enabled: true
+    
+  server:
+    # Run Vault in development mode for easy setup
+    # WARNING: Dev mode is NOT for production use
+    # - Data is stored in-memory (not persistent)
+    # - Vault is automatically unsealed
+    # - Root token is set to a known value
+    dev:
+      enabled: true
+      devRootToken: "root"
+    
+    # Service configuration
+    service:
+      enabled: true
+      type: ClusterIP
+      port: 8200
+    
+    # Resource limits
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+    
+    # Data storage (not used in dev mode, but configured for production upgrade)
+    dataStorage:
+      enabled: false
+      size: 10Gi
+      storageClass: null
+      accessMode: ReadWriteOnce
+    
+    # High availability (disabled for standalone)
+    ha:
+      enabled: false
+    
+    # Standalone mode
+    standalone:
+      enabled: true
+    
+    # Audit storage (disabled in dev mode)
+    auditStorage:
+      enabled: false
+
+  # UI configuration
+  ui:
+    enabled: true
+    serviceType: ClusterIP
+    externalPort: 8200
+
+  # Injector (for automatic secret injection into pods)
+  injector:
+    enabled: true
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+
+# MinIO credentials to be stored in Vault
+# These will be written to Vault by the init job
+minioCredentials:
+  rootUser: admin
+  rootPassword: adminpassword123
+  users:
+    - accessKey: default-minio
+      secretKey: defaultminio123
+      policy: minio-temporary-policy
+
+# Vault initialization configuration
+vaultInit:
+  # Enable the initialization job
+  enabled: true
+  # Path where MinIO secrets will be stored in Vault
+  secretPath: secret/minio
+  # Image for the init job (uses vault CLI)
+  image:
+    repository: hashicorp/vault
+    tag: 1.18.2
+    pullPolicy: IfNotPresent

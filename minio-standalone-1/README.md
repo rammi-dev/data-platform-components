@@ -142,7 +142,7 @@ minio:
     rootPassword: mysecurepassword
   
   persistence:
-    size: 50Gi
+    size: 2Gi
   
   resources:
     limits:
@@ -190,7 +190,41 @@ helm dependency update
 helm upgrade minio-standalone .
 ```
 
-## Troubleshooting
+## 🔐 Vault Integration
+
+This chart includes an example configuration for integrating with HashiCorp Vault to manage MinIO credentials securely.
+
+### Prerequisites
+
+1. Deploy Vault (see `../vault-deployment/`)
+2. Install helm-secrets plugin:
+   ```bash
+   ../install-helm-secrets.sh
+   ```
+
+### Using Vault-Stored Credentials
+
+The `minio-values-with-vault.yaml` file demonstrates how to deploy MinIO with credentials retrieved from Vault:
+
+```bash
+# Set Vault environment variables
+export VAULT_ADDR=http://vault-deployment-vault:8200
+export VAULT_TOKEN=root
+
+# Deploy MinIO with Vault secrets
+helm secrets upgrade --install minio . -f minio-values-with-vault.yaml
+```
+
+### How It Works
+
+1. **Vault stores credentials** at paths like `secret/minio/root`
+2. **helm-secrets plugin** retrieves values from Vault during deployment
+3. **Template variables** in `minio-values-with-vault.yaml` reference Vault paths
+4. **Helm renders** the final values with actual secrets from Vault
+
+See the [vault-deployment README](../vault-deployment/README.md) for detailed integration patterns.
+
+## 🔧 Troubleshooting
 
 ### Check Pod Logs
 

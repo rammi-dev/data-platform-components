@@ -1,0 +1,100 @@
+{{- if .Values.vaultInit.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "vault-deployment.fullname" . }}-init
+  labels:
+    {{- include "vault-deployment.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vault-init
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: vault-init
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "vault-deployment.fullname" . }}-init
+      containers:
+      - name: vault-init
+        image: "{{ .Values.vaultInit.image.repository }}:{{ .Values.vaultInit.image.tag }}"
+        imagePullPolicy: {{ .Values.vaultInit.image.pullPolicy }}
+        env:
+        - name: VAULT_ADDR
+          value: "http://{{ include "vault-deployment.fullname" . }}-vault:8200"
+        - name: VAULT_TOKEN
+          value: "root"
+        - name: MINIO_ROOT_USER
+          value: {{ .Values.minioCredentials.rootUser | quote }}
+        - name: MINIO_ROOT_PASSWORD
+          value: {{ .Values.minioCredentials.rootPassword | quote }}
+        {{- range $index, $user := .Values.minioCredentials.users }}
+        - name: MINIO_USER_{{ $index }}_ACCESS_KEY
+          value: {{ $user.accessKey | quote }}
+        - name: MINIO_USER_{{ $index }}_SECRET_KEY
+          value: {{ $user.secretKey | quote }}
+        - name: MINIO_USER_{{ $index }}_POLICY
+          value: {{ $user.policy | quote }}
+        {{- end }}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          
+          echo "Waiting for Vault to be ready..."
+          until vault status > /dev/null 2>&1; do
+            echo "Vault is not ready yet, waiting..."
+            sleep 2
+          done
+          echo "Vault is ready!"
+          
+          echo "Enabling KV secrets engine v2..."
+          vault secrets enable -path=secret kv-v2 || echo "KV secrets engine already enabled"
+          
+          echo "Storing MinIO root credentials..."
+          vault kv put {{ .Values.vaultInit.secretPath }}/root \
+            username="${MINIO_ROOT_USER}" \
+            password="${MINIO_ROOT_PASSWORD}"
+          
+          {{- range $index, $user := .Values.minioCredentials.users }}
+          echo "Storing MinIO user {{ $user.accessKey }} credentials..."
+          vault kv put {{ $.Values.vaultInit.secretPath }}/users/{{ $user.accessKey }} \
+            accessKey="${MINIO_USER_{{ $index }}_ACCESS_KEY}" \
+            secretKey="${MINIO_USER_{{ $index }}_SECRET_KEY}" \
+            policy="${MINIO_USER_{{ $index }}_POLICY}"
+          {{- end }}
+          
+          echo "Creating Vault policy for MinIO secrets..."
+          vault policy write minio-policy - <<EOF
+          path "{{ .Values.vaultInit.secretPath }}/*" {
+            capabilities = ["read", "list"]
+          }
+          EOF
+          
+          echo "Vault initialization completed successfully!"
+          echo "MinIO credentials stored at: {{ .Values.vaultInit.secretPath }}"
+          
+          echo ""
+          echo "=== Stored Secrets ==="
+          vault kv list {{ .Values.vaultInit.secretPath }}
+          echo ""
+          echo "=== MinIO Root Credentials ==="
+          vault kv get {{ .Values.vaultInit.secretPath }}/root
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "vault-deployment.fullname" . }}-init
+  labels:
+    {{- include "vault-deployment.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vault-init
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+{{- end }}

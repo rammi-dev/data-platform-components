@@ -15,13 +15,13 @@ MinIO Standalone Installation
 
 3. Access MinIO API:
 
-   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ .Release.Name }}-minio 9000:9000
+   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "minio-subchart.fullname" . }} 9000:9000
 
    MinIO API endpoint: http://localhost:9000
 
 4. Access MinIO Console (Web UI):
 
-   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ .Release.Name }}-minio-console 9001:9001
+   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "minio-subchart.fullname" . }}-console 9001:9001
 
    MinIO Console: http://localhost:9001
 
