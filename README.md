@@ -56,7 +56,22 @@ cd vault-deployment
 - `README.md` - Usage guide
 - `VAULT_SETUP.md` - Advanced configuration
 
-### 3. MinIO with Vault Integration (`minio-standalone-1/minio-values-with-vault.yaml`)
+### 3. Rook-Ceph Deployment (`rook-ceph-deployment/`)
+
+Rook-Ceph deployment providing S3-compatible object storage, serving as an alternative to MinIO.
+
+**Features:**
+- Orchestrates Ceph storage cluster on Kubernetes
+- Provides S3-compatible Object Store
+- Configured for development/playground environments
+
+**Quick Start:**
+```bash
+cd rook-ceph-deployment
+./install.sh
+```
+
+### 4. MinIO with Vault Integration (`minio-standalone-1/minio-values-with-vault.yaml`)
 
 Example configuration showing how to deploy MinIO using credentials stored in Vault via helm-secrets plugin.
 

@@ -1,0 +1,12 @@
+apiVersion: v2
+name: rook-ceph-deployment
+description: A Helm chart for deploying Rook-Ceph Cluster with Object Storage
+type: application
+version: 1.0.0
+appVersion: "1.12.8"
+
+dependencies:
+  - name: rook-ceph-cluster
+    version: v1.12.8
+    repository: https://charts.rook.io/release
+    condition: rook-ceph-cluster.enabled

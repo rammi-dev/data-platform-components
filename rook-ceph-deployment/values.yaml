@@ -1,0 +1,73 @@
+# Default values for rook-ceph-deployment.
+
+rook-ceph-cluster:
+  enabled: true
+  operatorNamespace: rook-ceph
+  toolbox:
+    enabled: true
+
+  cephClusterSpec:
+    dataDirHostPath: /var/lib/rook
+    mon:
+      count: 1
+      allowMultiplePerNode: true
+    mgr:
+      count: 1
+      allowMultiplePerNode: true
+    dashboard:
+      enabled: true
+      ssl: false
+    storage:
+      useAllNodes: false
+      useAllDevices: false
+      deviceFilter: ""
+      config:
+        osdsPerDevice: "1"
+      storageClassDeviceSets:
+      - name: set1
+        count: 1
+        portable: false
+        tuneDeviceClass: true
+        volumeClaimTemplates:
+        - metadata:
+            name: data
+          spec:
+            resources:
+              requests:
+                storage: 10Gi
+            storageClassName: standard
+            volumeMode: Filesystem
+            accessModes:
+            - ReadWriteOnce
+
+  cephFileSystems: []
+  cephBlockPools: []
+      # For playground/minikube, we often use hostPath or PVCs on loopback
+      # This configuration assumes a simple environment.
+      # If you have raw devices, set useAllDevices: true
+      # For Minikube with extra disk:
+      # storage:
+      #   useAllNodes: true
+      #   useAllDevices: true
+      
+  # Object Store (S3) Configuration
+  cephObjectStores:
+    - name: my-store
+      spec:
+        metadataPool:
+          failureDomain: host
+          replicated:
+            size: 1
+        dataPool:
+          failureDomain: host
+          erasureCoded:
+            dataChunks: 2
+            codingChunks: 1
+        preservePoolsOnDelete: true
+        gateway:
+          port: 80
+          instances: 1
+      storageClass:
+        enabled: true
+        name: my-store-bucket
+        reclaimPolicy: Delete
