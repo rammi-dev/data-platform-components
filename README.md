@@ -1,4 +1,4 @@
-# as for hte helm value sinjector use only Vault Agnet injector remove other 
+# Playgroud to deploy different components for testing
 
 # Data Platform Components
 
